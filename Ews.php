@@ -451,8 +451,8 @@ class Ews
 
         $request->ItemChanges[] = $change;
 
-        $response = $this->ews->UpdateItem($request);
-        var_dump($response);exit;
+        //$response = $this->ews->UpdateItem($request);
+        //var_dump($response);exit;
     }
 
     private function createEventArrayFromResponse($calendarItem)
