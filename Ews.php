@@ -28,7 +28,9 @@ use Exchange\EWSType\EWSType_DistinguishedFolderIdNameType;
 use Exchange\EWSType\EWSType_ContactsViewType;
 use Exchange\EWSType\EWSType_NonEmptyArrayOfBaseItemIdsType;
 use Exchange\EWSType\EWSType_NonEmptyArrayOfFieldOrdersType;
+use Exchange\EWSType\EWSType_NonEmptyArrayOfOccurrenceInfoType;
 use Exchange\EWSType\EWSType_NonEmptyArrayOfPathsToElementType;
+use Exchange\EWSType\EWSType_OccurrenceItemIdType;
 use Exchange\EWSType\EWSType_PathToExtendedFieldType;
 use Exchange\EWSType\EWSType_PathToUnindexedFieldType;
 use Exchange\EWSType\EWSType_SensitivityChoicesType;
@@ -86,6 +88,50 @@ class Ews
         }
     }
 
+    public function getCalendarRecurrenceEvents($start_date = null, $end_date = null)
+    {
+        $currentDate = strtotime('now');
+        $startDate = (!$start_date) ? date('c', strtotime('-15 days', $currentDate))
+            : date('c', strtotime($start_date));
+        $endDate = (!$end_date) ? date('c', strtotime('+15 days', $currentDate))
+            : date('c', strtotime($end_date));
+        $myEvents = [];
+        $request = new EWSType_FindItemType();
+        // Use this to search only the items in the parent directory in question or use ::SOFT_DELETED
+        // to identify "soft deleted" items, i.e. not visible and not in the trash can.
+        $request->Traversal = EWSType_ItemQueryTraversalType::SHALLOW;
+        // This identifies the set of properties to return in an item or folder response
+        $request->ItemShape = new EWSType_ItemResponseShapeType();
+        $request->ItemShape->BaseShape = EWSType_DefaultShapeNamesType::ALL_PROPERTIES;
+
+        // Define the timeframe to load calendar items
+        $request->CalendarView = new EWSType_CalendarViewType();
+        $request->CalendarView->StartDate = $startDate;
+        $request->CalendarView->EndDate = $endDate;
+
+        $request->ItemIds = new EWSType_NonEmptyArrayOfAllItemsType();
+        $request->ItemIds->ItemId = new EWSType_OccurrenceItemIdType();
+
+        // Only look in the "calendars folder"
+        $request->ParentFolderIds = new EWSType_NonEmptyArrayOfBaseFolderIdsType();
+        $request->ParentFolderIds->DistinguishedFolderId = new EWSType_DistinguishedFolderIdType();
+        $request->ParentFolderIds->DistinguishedFolderId->Id = EWSType_DistinguishedFolderIdNameType::CALENDAR;
+
+        // Send request
+        $response = $this->ews->FindItem($request);
+        //var_dump($response, $response->ResponseMessages->FindItemResponseMessage->RootFolder->Items->CalendarItem);
+        // Loop through each item if event(s) were found in the timeframe specified
+        if ($response->ResponseMessages->FindItemResponseMessage->RootFolder->TotalItemsInView > 0) {
+            $events = $response->ResponseMessages->FindItemResponseMessage->RootFolder->Items->CalendarItem;
+            foreach ($events as $event) {
+                $myEvents[] = $this->createEventArrayFromResponse($event);
+            }
+        } else {
+            // No items returned
+        }
+        return $myEvents;
+    }
+
     public function getCalendarEvents($start_date = null, $end_date = null)
     {
         $currentDate = strtotime('now');
@@ -100,7 +146,7 @@ class Ews
         $request->Traversal = EWSType_ItemQueryTraversalType::SHALLOW;
         // This identifies the set of properties to return in an item or folder response
         $request->ItemShape = new EWSType_ItemResponseShapeType();
-        $request->ItemShape->BaseShape = EWSType_DefaultShapeNamesType::DEFAULT_PROPERTIES;
+        $request->ItemShape->BaseShape = EWSType_DefaultShapeNamesType::ALL_PROPERTIES;
 
         // Define the timeframe to load calendar items
         $request->CalendarView = new EWSType_CalendarViewType();
@@ -221,6 +267,16 @@ class Ews
         return $response->ResponseMessages->GetItemResponseMessage->Items->CalendarItem;
     }
 
+
+    /**
+     * The list of recurrent Events will be treated apart,
+     * the Idea is to rewrite in all sync iteration the recurrent events
+     * With this avoid a heavy logic(obtain occurrence exceptions, or deleted exceptions) for managing occurrences taking into consideration
+     * that EWS doesnt return the complete list of occurrences by RecurrentMasterId,
+     * avoid also
+     * @param null $sync_state
+     * @return array
+     */
     public function synchronize($sync_state = null)
     {
         $sync_state = (!is_null($sync_state)) ? $sync_state : null;
@@ -282,6 +338,10 @@ class Ews
                 }
             }
         }
+        //Implemented Apart the Recurrent Events
+        foreach ($this->getCalendarRecurrenceEvents() as $event) {
+            $syncArray['events']['recurrent'][] = $event;
+        }
         return $syncArray;
     }
 
@@ -311,7 +371,7 @@ class Ews
         $request->Items->CalendarItem->ReminderMinutesBeforeStart = 15;
 
         /**
-         * No Body for Now
+         * No Body
          */
         //$request->Items->CalendarItem->Body = new EWSType_BodyType();
         //$request->Items->CalendarItem->Body->BodyType = EWSType_BodyTypeType::TEXT;
@@ -466,8 +526,7 @@ class Ews
         $myEvent['title'] = $calendarItem->Organizer->Mailbox->Name.' - '. $calendarItem->Subject;
         $myEvent['type'] = $calendarItem->CalendarItemType;
         $myEvent['organizer'] = $calendarItem->Organizer->Mailbox->Name;
-        // It is used only on real Sync not available for v1
-        //$myEvent['recurring'] = $calendarItem->IsRecurring;
+        $myEvent['recurring'] = $calendarItem->IsRecurring;
         $myEvent['free_busy_status'] = $calendarItem->LegacyFreeBusyStatus;
         $myEvent['category'] = null;
         return $myEvent;
