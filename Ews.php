@@ -8,6 +8,8 @@ use Exchange\EWSType\EWSType_BodyTypeType;
 use Exchange\EWSType\EWSType_CalendarItemCreateOrDeleteOperationType;
 use Exchange\EWSType\EWSType_CalendarItemType;
 use Exchange\EWSType\EWSType_CreateItemType;
+use Exchange\EWSType\EWSType_DeleteItemType;
+use Exchange\EWSType\EWSType_DisposalType;
 use Exchange\EWSType\EWSType_DistinguishedPropertySetIdType;
 use Exchange\EWSType\EWSType_FieldOrderType;
 use Exchange\EWSType\EWSType_FindItemType;
@@ -511,8 +513,43 @@ class Ews
 
         $request->ItemChanges[] = $change;
 
-        //$response = $this->ews->UpdateItem($request);
-        //var_dump($response);exit;
+        $response = $this->ews->UpdateItem($request);
+        if ($response->ResponseMessages->CreateItemResponseMessage->ResponseClass == 'Success') {
+            $replyArray = [];
+            $replyArray['id'] = $response->ResponseMessages->CreateItemResponseMessage->Items->CalendarItem->ItemId->Id;
+            $replyArray['change_key'] = $response->ResponseMessages->CreateItemResponseMessage->Items->CalendarItem->ItemId->ChangeKey;
+        }
+        return $replyArray;
+    }
+
+    /**
+     * @param $myEvent
+     */
+    public function removeCalendarEvent($myEvent)
+    {
+        $event_id = $myEvent['source_id'];
+        $event_change_key = $myEvent['change_key'];
+
+        // Define the delete item class
+        $request = new EWSType_DeleteItemType();
+        // Send to trash can, or use EWSType_DisposalType::HARD_DELETE instead to bypass the bin directly
+        $request->DeleteType = EWSType_DisposalType::MOVE_TO_DELETED_ITEMS;
+        // Inform no one who shares the item that it has been deleted
+        $request->SendMeetingCancellations = EWSType_CalendarItemCreateOrDeleteOperationType::SEND_TO_NONE;
+        // Set the item to be deleted
+        $item = new EWSType_ItemIdType();
+        $item->Id = $event_id;
+        $item->ChangeKey = $event_change_key;
+        // We can use this to mass delete but in this case it's just one item
+        $items = new EWSType_NonEmptyArrayOfBaseItemIdsType();
+        $items->ItemId = $item;
+        $request->ItemIds = $items;
+        // Send the request
+        $response = $this->ews->DeleteItem($request);
+        if ($response->ResponseMessages->CreateItemResponseMessage->ResponseClass == 'Success') {
+            return true;
+        }
+        return false;
     }
 
     private function createEventArrayFromResponse($calendarItem)
