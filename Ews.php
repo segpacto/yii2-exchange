@@ -514,10 +514,13 @@ class Ews
         $request->ItemChanges[] = $change;
 
         $response = $this->ews->UpdateItem($request);
-        if ($response->ResponseMessages->CreateItemResponseMessage->ResponseClass == 'Success') {
+        if ($response->ResponseMessages->UpdateItemResponseMessage->ResponseClass == 'Success') {
             $replyArray = [];
-            $replyArray['id'] = $response->ResponseMessages->CreateItemResponseMessage->Items->CalendarItem->ItemId->Id;
-            $replyArray['change_key'] = $response->ResponseMessages->CreateItemResponseMessage->Items->CalendarItem->ItemId->ChangeKey;
+            $replyArray['id'] = $response->ResponseMessages->UpdateItemResponseMessage->Items->CalendarItem->ItemId->Id;
+            $replyArray['change_key'] = $response->ResponseMessages->UpdateItemResponseMessage->Items->CalendarItem->ItemId->ChangeKey;
+        } elseif (($response->ResponseMessages->UpdateItemResponseMessage->ResponseClass == 'Error')
+            and ($response->ResponseMessages->UpdateItemResponseMessage->ResponseCode == 'ErrorItemNotFound')) {
+            return $this->createCalendarEvent($myEvent);
         }
         return $replyArray;
     }
@@ -545,8 +548,11 @@ class Ews
         $items->ItemId = $item;
         $request->ItemIds = $items;
         // Send the request
-        $response = $this->ews->DeleteItem($request);
-        if ($response->ResponseMessages->CreateItemResponseMessage->ResponseClass == 'Success') {
+        $response = $this->ews->DeleteItem($request);var_dump($response->ResponseMessages);
+        if ($response->ResponseMessages->DeleteItemResponseMessage->ResponseClass == 'Success') {
+            return true;
+        } elseif (($response->ResponseMessages->DeleteItemResponseMessage->ResponseClass == 'Error')
+            and ($response->ResponseMessages->DeleteItemResponseMessage->ResponseCode == 'ErrorItemNotFound')) {
             return true;
         }
         return false;
