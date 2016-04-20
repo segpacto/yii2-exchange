@@ -1148,7 +1148,12 @@ class ExchangeWebServices
     public function UpdateItem($request)
     {
         $this->initializeSoapClient();
-        $response = $this->soap->{__FUNCTION__}($request);
+        try {
+            $response = $this->soap->{__FUNCTION__}($request);
+        } catch (\Exception $e) {
+            echo $e;exit;
+        }
+
 
         return $this->processResponse($response);
     }
