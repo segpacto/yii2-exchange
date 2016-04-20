@@ -134,7 +134,10 @@ class Ews
         if ($response->ResponseMessages->FindItemResponseMessage->RootFolder->TotalItemsInView > 0) {
             $events = $response->ResponseMessages->FindItemResponseMessage->RootFolder->Items->CalendarItem;
             foreach ($events as $event) {
-                $myEvents[] = $this->createEventArrayFromResponse($event);
+                if ($event->IsRecurring) {
+                    $myEvents[] = $this->createEventArrayFromResponse($event);
+                }
+
             }
         } else {
             // No items returned
@@ -565,6 +568,7 @@ class Ews
             $field->CalendarItem->Recurrence->EndDateRecurrence->StartDate = $startDate->format('Y-m-d');
             $change->Updates->SetItemField[] = $field;
         }
+
         //Update Location Property
         /**
          * not modify Location
