@@ -622,7 +622,7 @@ class Ews
         $items->ItemId = $item;
         $request->ItemIds = $items;
         // Send the request
-        $response = $this->ews->DeleteItem($request);var_dump($response->ResponseMessages);
+        $response = $this->ews->DeleteItem($request);
         if ($response->ResponseMessages->DeleteItemResponseMessage->ResponseClass == 'Success') {
             return true;
         } elseif (($response->ResponseMessages->DeleteItemResponseMessage->ResponseClass == 'Error')
