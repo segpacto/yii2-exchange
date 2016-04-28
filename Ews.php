@@ -392,23 +392,24 @@ class Ews
         //$request->Items->CalendarItem->Body->BodyType = EWSType_BodyTypeType::TEXT;
 
         //$request->Items->CalendarItem->Body->_ = '';
-
-        if ($myEvent['daily']) {
-            $request->Items->CalendarItem->Recurrence = new EWSType_RecurrenceType();
-            $request->Items->CalendarItem->Recurrence->DailyRecurrence = new EWSType_DailyRecurrencePatternType();
-            $request->Items->CalendarItem->Recurrence->DailyRecurrence->Interval = 1;
-            $request->Items->CalendarItem->Recurrence->EndDateRecurrence = new EWSType_EndDateRecurrenceRangeType();
-            $request->Items->CalendarItem->Recurrence->EndDateRecurrence->EndDate = $endDate->modify('+1 year')->format('Y-m-d');
-            $request->Items->CalendarItem->Recurrence->EndDateRecurrence->StartDate = $startDate->format('Y-m-d');
-        } elseif ($myEvent['weekly']) {
-            $request->Items->CalendarItem->Recurrence = new EWSType_RecurrenceType();
-            $request->Items->CalendarItem->Recurrence->WeeklyRecurrence = new EWSType_WeeklyRecurrencePatternType();
-            $request->Items->CalendarItem->Recurrence->WeeklyRecurrence->Interval = 1;
-            $request->Items->CalendarItem->Recurrence->WeeklyRecurrence->DaysOfWeek = new EWSType_ArrayOfStringsType();
-            $request->Items->CalendarItem->Recurrence->WeeklyRecurrence->DaysOfWeek = array($startDate->format('l'));
-            $request->Items->CalendarItem->Recurrence->EndDateRecurrence = new EWSType_EndDateRecurrenceRangeType();
-            $request->Items->CalendarItem->Recurrence->EndDateRecurrence->EndDate = $endDate->modify('+1 year')->format('Y-m-d');
-            $request->Items->CalendarItem->Recurrence->EndDateRecurrence->StartDate = $startDate->format('Y-m-d');
+        if ($myEvent['category'] == 'Flex') {
+            if ($myEvent['daily']) {
+                $request->Items->CalendarItem->Recurrence = new EWSType_RecurrenceType();
+                $request->Items->CalendarItem->Recurrence->DailyRecurrence = new EWSType_DailyRecurrencePatternType();
+                $request->Items->CalendarItem->Recurrence->DailyRecurrence->Interval = 1;
+                $request->Items->CalendarItem->Recurrence->EndDateRecurrence = new EWSType_EndDateRecurrenceRangeType();
+                $request->Items->CalendarItem->Recurrence->EndDateRecurrence->EndDate = $endDate->modify('+1 year')->format('Y-m-d');
+                $request->Items->CalendarItem->Recurrence->EndDateRecurrence->StartDate = $startDate->format('Y-m-d');
+            } elseif ($myEvent['weekly']) {
+                $request->Items->CalendarItem->Recurrence = new EWSType_RecurrenceType();
+                $request->Items->CalendarItem->Recurrence->WeeklyRecurrence = new EWSType_WeeklyRecurrencePatternType();
+                $request->Items->CalendarItem->Recurrence->WeeklyRecurrence->Interval = 1;
+                $request->Items->CalendarItem->Recurrence->WeeklyRecurrence->DaysOfWeek = new EWSType_ArrayOfStringsType();
+                $request->Items->CalendarItem->Recurrence->WeeklyRecurrence->DaysOfWeek = array($startDate->format('l'));
+                $request->Items->CalendarItem->Recurrence->EndDateRecurrence = new EWSType_EndDateRecurrenceRangeType();
+                $request->Items->CalendarItem->Recurrence->EndDateRecurrence->EndDate = $endDate->modify('+1 year')->format('Y-m-d');
+                $request->Items->CalendarItem->Recurrence->EndDateRecurrence->StartDate = $startDate->format('Y-m-d');
+            }
         }
 
         $request->Items->CalendarItem->ItemClass = new EWSType_ItemClassType();
@@ -529,44 +530,46 @@ class Ews
         $field->CalendarItem->LegacyFreeBusyStatus = $myEvent['free_busy_status'];
         $change->Updates->SetItemField[] = $field;
 
-        if ($myEvent['daily']) {
-            $field = new EWSType_SetItemFieldType();
-            $field->FieldURI = new EWSType_PathToUnindexedFieldType();
-            $field->FieldURI->FieldURI = 'calendar:Recurrence';
-            $field->CalendarItem = new EWSType_CalendarItemType();
-            $field->CalendarItem->Recurrence = new EWSType_RecurrenceType();
-            $field->CalendarItem->Recurrence->DailyRecurrence = new EWSType_DailyRecurrencePatternType();
-            $field->CalendarItem->Recurrence->DailyRecurrence->Interval = 1;
-            $field->CalendarItem->Recurrence->EndDateRecurrence = new EWSType_EndDateRecurrenceRangeType();
-            $field->CalendarItem->Recurrence->EndDateRecurrence->EndDate = $endDate->modify('+1 year')->format('Y-m-d');
-            $field->CalendarItem->Recurrence->EndDateRecurrence->StartDate = $startDate->format('Y-m-d');
-            $change->Updates->SetItemField[] = $field;
-        } elseif ($myEvent['weekly']) {
-            $field = new EWSType_SetItemFieldType();
-            $field->FieldURI = new EWSType_PathToUnindexedFieldType();
-            $field->FieldURI->FieldURI = 'calendar:Recurrence';
-            $field->CalendarItem = new EWSType_CalendarItemType();
-            $field->CalendarItem->Recurrence = new EWSType_RecurrenceType();
-            $field->CalendarItem->Recurrence->WeeklyRecurrence = new EWSType_WeeklyRecurrencePatternType();
-            $field->CalendarItem->Recurrence->WeeklyRecurrence->Interval = 1;
-            $field->CalendarItem->Recurrence->WeeklyRecurrence->DaysOfWeek = new EWSType_ArrayOfStringsType();
-            $field->CalendarItem->Recurrence->WeeklyRecurrence->DaysOfWeek = array($startDate->format('l'));
-            $field->CalendarItem->Recurrence->EndDateRecurrence = new EWSType_EndDateRecurrenceRangeType();
-            $field->CalendarItem->Recurrence->EndDateRecurrence->EndDate = $endDate->modify('+1 year')->format('Y-m-d');
-            $field->CalendarItem->Recurrence->EndDateRecurrence->StartDate = $startDate->format('Y-m-d');
-            $change->Updates->SetItemField[] = $field;
-        } else {
-            $field = new EWSType_SetItemFieldType();
-            $field->FieldURI = new EWSType_PathToUnindexedFieldType();
-            $field->FieldURI->FieldURI = 'calendar:Recurrence';
-            $field->CalendarItem = new EWSType_CalendarItemType();
-            $field->CalendarItem->Recurrence = new EWSType_RecurrenceType();
-            $field->CalendarItem->Recurrence->DailyRecurrence = new EWSType_DailyRecurrencePatternType();
-            $field->CalendarItem->Recurrence->DailyRecurrence->Interval = 1;
-            $field->CalendarItem->Recurrence->EndDateRecurrence = new EWSType_EndDateRecurrenceRangeType();
-            $field->CalendarItem->Recurrence->EndDateRecurrence->EndDate = $endDate->format('Y-m-d');
-            $field->CalendarItem->Recurrence->EndDateRecurrence->StartDate = $startDate->format('Y-m-d');
-            $change->Updates->SetItemField[] = $field;
+        if ($myEvent['category'] == 'Flex') {
+            if ($myEvent['daily']) {
+                $field = new EWSType_SetItemFieldType();
+                $field->FieldURI = new EWSType_PathToUnindexedFieldType();
+                $field->FieldURI->FieldURI = 'calendar:Recurrence';
+                $field->CalendarItem = new EWSType_CalendarItemType();
+                $field->CalendarItem->Recurrence = new EWSType_RecurrenceType();
+                $field->CalendarItem->Recurrence->DailyRecurrence = new EWSType_DailyRecurrencePatternType();
+                $field->CalendarItem->Recurrence->DailyRecurrence->Interval = 1;
+                $field->CalendarItem->Recurrence->EndDateRecurrence = new EWSType_EndDateRecurrenceRangeType();
+                $field->CalendarItem->Recurrence->EndDateRecurrence->EndDate = $endDate->modify('+1 year')->format('Y-m-d');
+                $field->CalendarItem->Recurrence->EndDateRecurrence->StartDate = $startDate->format('Y-m-d');
+                $change->Updates->SetItemField[] = $field;
+            } elseif ($myEvent['weekly']) {
+                $field = new EWSType_SetItemFieldType();
+                $field->FieldURI = new EWSType_PathToUnindexedFieldType();
+                $field->FieldURI->FieldURI = 'calendar:Recurrence';
+                $field->CalendarItem = new EWSType_CalendarItemType();
+                $field->CalendarItem->Recurrence = new EWSType_RecurrenceType();
+                $field->CalendarItem->Recurrence->WeeklyRecurrence = new EWSType_WeeklyRecurrencePatternType();
+                $field->CalendarItem->Recurrence->WeeklyRecurrence->Interval = 1;
+                $field->CalendarItem->Recurrence->WeeklyRecurrence->DaysOfWeek = new EWSType_ArrayOfStringsType();
+                $field->CalendarItem->Recurrence->WeeklyRecurrence->DaysOfWeek = array($startDate->format('l'));
+                $field->CalendarItem->Recurrence->EndDateRecurrence = new EWSType_EndDateRecurrenceRangeType();
+                $field->CalendarItem->Recurrence->EndDateRecurrence->EndDate = $endDate->modify('+1 year')->format('Y-m-d');
+                $field->CalendarItem->Recurrence->EndDateRecurrence->StartDate = $startDate->format('Y-m-d');
+                $change->Updates->SetItemField[] = $field;
+            } else {
+                $field = new EWSType_SetItemFieldType();
+                $field->FieldURI = new EWSType_PathToUnindexedFieldType();
+                $field->FieldURI->FieldURI = 'calendar:Recurrence';
+                $field->CalendarItem = new EWSType_CalendarItemType();
+                $field->CalendarItem->Recurrence = new EWSType_RecurrenceType();
+                $field->CalendarItem->Recurrence->DailyRecurrence = new EWSType_DailyRecurrencePatternType();
+                $field->CalendarItem->Recurrence->DailyRecurrence->Interval = 1;
+                $field->CalendarItem->Recurrence->EndDateRecurrence = new EWSType_EndDateRecurrenceRangeType();
+                $field->CalendarItem->Recurrence->EndDateRecurrence->EndDate = $endDate->format('Y-m-d');
+                $field->CalendarItem->Recurrence->EndDateRecurrence->StartDate = $startDate->format('Y-m-d');
+                $change->Updates->SetItemField[] = $field;
+            }
         }
 
         //Update Location Property
@@ -619,7 +622,7 @@ class Ews
         $items->ItemId = $item;
         $request->ItemIds = $items;
         // Send the request
-        $response = $this->ews->DeleteItem($request);var_dump($response->ResponseMessages);
+        $response = $this->ews->DeleteItem($request);
         if ($response->ResponseMessages->DeleteItemResponseMessage->ResponseClass == 'Success') {
             return true;
         } elseif (($response->ResponseMessages->DeleteItemResponseMessage->ResponseClass == 'Error')
