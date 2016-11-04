@@ -74,6 +74,8 @@ class Ews
             ExchangeWebServices::VERSION_2010 => 'Exchange2010',
             ExchangeWebServices::VERSION_2010_SP1 =>'Exchange2010_SP1',
             ExchangeWebServices::VERSION_2010_SP2 => 'Exchange2010_SP2',
+            ExchangeWebServices::VERSION_2013 =>'Exchange2013',
+            ExchangeWebServices::VERSION_2013_SP1 => 'Exchange2013_SP1',
         ];
     }
 
@@ -98,6 +100,12 @@ class Ews
         }
     }
 
+    /**
+     * Todo : Use as integers days in the past to days in the future from now, instead of dates
+     * @param null $start_date
+     * @param null $end_date
+     * @return array
+     */
     public function getCalendarRecurrenceEvents($start_date = null, $end_date = null)
     {
         $currentDate = strtotime('now');
@@ -290,13 +298,16 @@ class Ews
      * @param null $sync_state
      * @return array
      */
-    public function synchronize($sync_state = null)
+    public function synchronize($sync_state = null, $returnRecursiveEvents = true, $daysBack = 5, $daysFront = 5)
     {
         $sync_state = (!is_null($sync_state)) ? $sync_state : null;
 
+        $daysInThePats = intval($daysBack);
+        $daysInTheFuture = intval($daysFront);
+
         $currentDate = strtotime('now');
-        $startDate = date('c', strtotime('-15 days', $currentDate));
-        $endDate = date('c', strtotime('+15 days', $currentDate));
+        $startDate = date('c', strtotime('-'.$daysInThePats.' days', $currentDate));
+        $endDate = date('c', strtotime('+'.$daysInTheFuture.' days', $currentDate));
 
         $syncArray = [];
         $request = new EWSType_SyncFolderItemsType();
@@ -305,6 +316,12 @@ class Ews
         $request->ItemShape = new EWSType_ItemResponseShapeType;
         $request->ItemShape->BaseShape = EWSType_DefaultShapeNamesType::ALL_PROPERTIES;
 
+        /**
+         * For some circumstance the start Date and end Date is not scoping the synch.
+         * Some documentation on the internet describe it as available, However the 
+         * official documentation dont specify this attributes
+         * https://msdn.microsoft.com/en-us/library/office/dn440952%28v=exchg.150%29.aspx
+         */
         $request->CalendarView = new EWSType_CalendarViewType();
         $request->CalendarView->StartDate = $startDate;
         $request->CalendarView->EndDate = $endDate;
@@ -351,9 +368,26 @@ class Ews
                 }
             }
         }
+
+        $amountOfEvents = count($syncArray['events']['created'])
+            + count($syncArray['events']['updated'])
+            + count($syncArray['events']['deleted']);
+
+        // Continue fetching events in case the maximum value as been obtained
+        // https://msdn.microsoft.com/en-us/library/office/aa566325%28v=exchg.150%29.aspx
+        if ($amountOfEvents >= 512) {
+            $extendedEvents = $this->synchronize($syncArray['status_id'], false, $daysBack, $daysFront);
+            $syncArray['events']['created'] = array_merge_recursive($syncArray['events']['created'], $extendedEvents['events']['created']);
+            $syncArray['events']['updated'] = array_merge_recursive($syncArray['events']['updated'], $extendedEvents['events']['updated']);
+            $syncArray['events']['deleted'] = array_merge_recursive($syncArray['events']['deleted'], $extendedEvents['events']['deleted']);
+            $syncArray['status_id'] = $extendedEvents['status_id'];
+        }
+
         //Implemented Apart the Recurrent Events
-        foreach ($this->getCalendarRecurrenceEvents() as $event) {
-            $syncArray['events']['recurrent'][] = $event;
+        if ($returnRecursiveEvents) {
+            foreach ($this->getCalendarRecurrenceEvents() as $event) {
+                $syncArray['events']['recurrent'][] = $event;
+            }
         }
         return $syncArray;
     }
