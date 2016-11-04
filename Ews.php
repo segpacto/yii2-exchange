@@ -369,9 +369,13 @@ class Ews
             }
         }
 
+        $amountOfEvents = count($syncArray['events']['created'])
+            + count($syncArray['events']['updated'])
+            + count($syncArray['events']['deleted']);
+
         // Continue fetching events in case the maximum value as been obtained
         // https://msdn.microsoft.com/en-us/library/office/aa566325%28v=exchg.150%29.aspx
-        if (count($syncArray['events']['created']) >= 512) {
+        if ($amountOfEvents >= 512) {
             $extendedEvents = $this->synchronize($syncArray['status_id'], false, $daysBack, $daysFront);
             $syncArray['events']['created'] = array_merge_recursive($syncArray['events']['created'], $extendedEvents['events']['created']);
             $syncArray['events']['updated'] = array_merge_recursive($syncArray['events']['updated'], $extendedEvents['events']['updated']);
