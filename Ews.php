@@ -45,22 +45,27 @@ use Exchange\EWSType\EWSType_RecurrenceType;
 use Exchange\EWSType\EWSType_SensitivityChoicesType;
 use Exchange\EWSType\EWSType_SetItemFieldType;
 use Exchange\EWSType\EWSType_SyncFolderItemsType;
+use Exchange\EWSType\EWSType_TimeZoneDefinitionType;
 use Exchange\EWSType\EWSType_UpdateItemType;
 use Exchange\EWSType\EWSType_WeeklyRecurrencePatternType;
 use yii\helpers\ArrayHelper;
 
 class Ews
 {
+    public $timeZone = null;
+
     public $ews;
 
     public function __construct(
         $server = null,
         $username = null,
         $password = null,
-        $version = ExchangeWebServices::VERSION_2007
+        $version = ExchangeWebServices::VERSION_2007,
+        $timezone = null
     ) {
         @set_exception_handler(array($this, 'exceptionHandler'));
         $this->initialize();
+        $this->timeZone = $timezone;
         $this->ews = new ExchangeWebServices($server, $username, $password, $version);
     }
 
@@ -444,6 +449,11 @@ class Ews
                 $request->Items->CalendarItem->Recurrence->EndDateRecurrence->EndDate = $endDate->modify('+1 year')->format('Y-m-d');
                 $request->Items->CalendarItem->Recurrence->EndDateRecurrence->StartDate = $startDate->format('Y-m-d');
             }
+        }
+
+        if (!empty($this->timeZone)) {
+            $request->Items->CalendarItem->StartTimeZone = new EWSType_TimeZoneDefinitionType();
+            $request->Items->CalendarItem->StartTimeZone->Id = $this->timeZone;
         }
 
         $request->Items->CalendarItem->ItemClass = new EWSType_ItemClassType();
