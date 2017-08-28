@@ -547,7 +547,10 @@ class Ews
         $change->Updates->SetItemField[] = $field;
         */
 
-        //Update ReminderIsSet Property
+	//Update ReminderIsSet Property
+	//updating the ReminderIsSet property results in outlook constantly
+	//reminding the client even though the client closes the reminder.
+	
         //$field = new EWSType_SetItemFieldType();
         //$field->FieldURI = new EWSType_PathToUnindexedFieldType();
         //$field->FieldURI->FieldURI = 'item:ReminderIsSet';
