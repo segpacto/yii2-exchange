@@ -420,7 +420,7 @@ class Ews
         $date = new \DateTime($DateEnd);
         $request->Items->CalendarItem->End = $date->format('c');
 
-        $request->Items->CalendarItem->ReminderIsSet = false;
+        $request->Items->CalendarItem->ReminderIsSet = true;
 
         $request->Items->CalendarItem->ReminderMinutesBeforeStart = 15;
 
@@ -548,19 +548,19 @@ class Ews
         */
 
         //Update ReminderIsSet Property
-        $field = new EWSType_SetItemFieldType();
-        $field->FieldURI = new EWSType_PathToUnindexedFieldType();
-        $field->FieldURI->FieldURI = 'item:ReminderIsSet';
-        $field->CalendarItem = new EWSType_CalendarItemType();
-        $field->CalendarItem->ReminderIsSet = true;
-        $change->Updates->SetItemField[] = $field;
+        //$field = new EWSType_SetItemFieldType();
+        //$field->FieldURI = new EWSType_PathToUnindexedFieldType();
+        //$field->FieldURI->FieldURI = 'item:ReminderIsSet';
+        //$field->CalendarItem = new EWSType_CalendarItemType();
+        //$field->CalendarItem->ReminderIsSet = true;
+        //$change->Updates->SetItemField[] = $field;
 
         //Update ReminderMinutesBeforeStart Property
         $field = new EWSType_SetItemFieldType();
         $field->FieldURI = new EWSType_PathToUnindexedFieldType();
         $field->FieldURI->FieldURI = 'item:ReminderMinutesBeforeStart';
         $field->CalendarItem = new EWSType_CalendarItemType();
-        $field->CalendarItem->ReminderMinutesBeforeStart = 30;
+        $field->CalendarItem->ReminderMinutesBeforeStart = 15;
         $change->Updates->SetItemField[] = $field;
 
         //Update LegacyFreeBusyStatus Property
